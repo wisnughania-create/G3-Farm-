@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kandang Telur – Manajemen Bebek Petelur</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#eef4f1;--card:#fff;--ink:#12302e;--mut:#5d7673;--line:#d3e2de;--pri:#0f6b66;--egg:#bfe3da;--warn:#c2410c;--ok:#15803d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1f1e;--card:#162c2a;--ink:#e4f2ef;--mut:#92b0ab;--line:#26433f;--pri:#4fc3b8;--egg:#1f4a45;--warn:#fb923c;--ok:#4ade80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1f1e;--card:#162c2a;--ink:#e4f2ef;--mut:#92b0ab;--line:#26433f;--pri:#4fc3b8;--egg:#1f4a45;--warn:#fb923c;--ok:#4ade80;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Bricolage Grotesque",system-ui,sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+h1{font-size:1.7rem;font-weight:800;margin:0;letter-spacing:-.02em}
+h2{font-size:1.1rem;margin:0 0 10px}
+.set{display:flex;gap:8px;flex-wrap:wrap;font-size:.85rem;color:var(--mut)}
+.set label{display:flex;flex-direction:column;gap:2px}
+.set input{width:110px}
+nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px}
+nav button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px;border-radius:999px;font:inherit;cursor:pointer}
+nav button[aria-selected=true]{background:var(--pri);color:var(--bg);border-color:var(--pri);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--egg);border-radius:14px;padding:12px 14px}
+.stat b{display:block;font-size:1.6rem;font-weight:800;line-height:1.1}
+.stat span{font-size:.85rem;color:var(--mut)}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+label.f{display:flex;flex-direction:column;font-size:.85rem;color:var(--mut);gap:3px}
+input,select{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);width:100%}
+button.p{background:var(--pri);color:var(--bg);border:0;padding:10px 16px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}
+button.g{background:none;border:1px solid var(--line);color:var(--mut);padding:6px 10px;border-radius:8px;font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mut);font-weight:600}
+.empty{color:var(--mut);padding:14px 0}
+.neg{color:var(--warn)}.pos{color:var(--ok)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Kandang Telur</h1>
+<div class="set">
+<label>Populasi awal (ekor)<input id="flock" type="number" min="0"></label>
+<label>Harga telur (Rp/butir)<input id="price" type="number" min="0"></label>
+</div>
+</header>
+<nav role="tablist" id="nav"></nav>
+<main id="main"></main>
+</div>
+<script>
+var S;
+try{S=JSON.parse(localStorage.getItem('bp')||'null')}catch(e){}
+S=S||{flock:100,price:3000,telur:[],pakan:[],sehat:[],uang:[]};
+function save(){try{localStorage.setItem('bp',JSON.stringify(S))}catch(e){}}
+var rp=function(n){return 'Rp '+Math.round(n||0).toLocaleString('id-ID')};
+var today=new Date().toISOString().slice(0,10);
+var T={
+ telur:{l:'Telur',f:[['d','date','Tanggal'],['n','number','Telur (butir)'],['x','number','Retak/pecah (butir)']]},
+ pakan:{l:'Pakan',f:[['d','date','Tanggal'],['kg','number','Pakan (kg)'],['rp','number','Biaya (Rp)']]},
+ sehat:{l:'Kesehatan',f:[['d','date','Tanggal'],['j','select','Jenis',['Vaksin','Obat/vitamin','Bebek sakit','Bebek mati']],['q','number','Jumlah ekor'],['t','text','Catatan']]},
+ uang:{l:'Keuangan',f:[['d','date','Tanggal'],['j','select','Jenis',['Pemasukan','Pengeluaran']],['t','text','Keterangan'],['rp','number','Jumlah (Rp)']]}
+};
+var tab='ringkasan';
+function sum(a,k){return a.reduce(function(s,r){return s+(+r[k]||0)},0)}
+function pop(){return Math.max(0,S.flock-sum(S.sehat.filter(function(r){return r.j==='Bebek mati'}),'q'))}
+function byDate(a){return a.slice().sort(function(x,y){return x.d<y.d?-1:1})}
+function nav(){
+ var h='<button role="tab" data-t="ringkasan" aria-selected="'+(tab==='ringkasan')+'">Ringkasan</button>';
+ for(var k in T)h+='<button role="tab" data-t="'+k+'" aria-selected="'+(tab===k)+'">'+T[k].l+'</button>';
+ document.getElementById('nav').innerHTML=h;
+}
+function chart(){
+ var a=byDate(S.telur).slice(-14);
+ if(!a.length)return '<p class="empty">Belum ada data telur. Catat produksi harian di tab Telur.</p>';
+ var m=Math.max.apply(null,a.map(function(r){return +r.n||0}).concat([1])),w=100/a.length,s='';
+ a.forEach(function(r,i){var h=(+r.n||0)/m*90;
+  s+='<rect x="'+(i*w+w*.15)+'" y="'+(100-h)+'" width="'+w*.7+'" height="'+h+'" rx="1" fill="var(--pri)"><title>'+r.d+': '+r.n+' butir</title></rect>';});
+ return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:150px" role="img" aria-label="Produksi telur 14 hari terakhir">'+s+'</svg><div style="font-size:.8rem;color:var(--mut)">Produksi telur '+a.length+' hari terakhir (maks '+m+' butir)</div>';
+}
+function ringkasan(){
+ var p=pop(),e=byDate(S.telur),last=e[e.length-1],hdp=last&&p?(+last.n/p*100):0;
+ var pk=byDate(S.pakan),lp=pk[pk.length-1],gr=lp&&p?(+lp.kg*1000/p):0;
+ var ym=today.slice(0,7),inc=0,out=0;
+ S.uang.forEach(function(r){if((r.d||'').slice(0,7)===ym){if(r.j==='Pemasukan')inc+=+r.rp||0;else out+=+r.rp||0}});
+ S.pakan.forEach(function(r){if((r.d||'').slice(0,7)===ym)out+=+r.rp||0});
+ var val=last?((+last.n||0)-(+last.x||0))*S.price:0,net=inc-out;
+ var st=[[p+' ekor','Populasi saat ini'],[last?last.n+' butir':'–','Telur terakhir dicatat'],[last?hdp.toFixed(1)+'%':'–','Produksi harian (HDP)'],[lp?Math.round(gr)+' g':'–','Pakan per ekor (terakhir)'],[rp(val),'Nilai telur terakhir (layak jual)'],[rp(net),'Laba bulan ini']];
+ var h='<div class="stats">'+st.map(function(x){return '<div class="stat"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>'}).join('')+'</div>';
+ h+='<div class="card"><h2>Tren produksi telur</h2>'+chart()+'</div>';
+ h+='<div class="card"><h2>Acuan</h2><p style="margin:0;color:var(--mut)">Bebek petelur yang sehat umumnya menghasilkan telur di atas 70% per hari dan makan sekitar 140–170 gram pakan per ekor. Jika HDP turun tajam, cek pakan, air, dan kesehatan kawanan.</p></div>';
+ h+='<button class="g" id="demo">Isi data contoh</button> <button class="g" id="reset">Hapus semua data</button>';
+ return h;
+}
+function listing(k){
+ var c=T[k],h='<div class="card"><h2>Tambah catatan: '+c.l+'</h2><form id="frm">';
+ c.f.forEach(function(f){
+  h+='<label class="f">'+f[2];
+  if(f[1]==='select')h+='<select name="'+f[0]+'">'+f[3].map(function(o){return '<option>'+o+'</option>'}).join('')+'</select>';
+  else h+='<input name="'+f[0]+'" type="'+f[1]+'"'+(f[1]==='date'?' value="'+today+'"':'')+(f[1]==='number'?' min="0" step="any"':'')+' required>';
+  h+='</label>';});
+ h+='<button class="p" type="submit">Simpan catatan</button></form></div>';
+ var rows=byDate(S[k]).reverse();
+ h+='<div class="card"><h2>Riwayat</h2>';
+ if(!rows.length)h+='<p class="empty">Belum ada catatan. Isi formulir di atas lalu simpan.</p>';
+ else{
+  h+='<div class="tw"><table><tr>'+c.f.map(function(f){return '<th>'+f[2]+'</th>'}).join('')+'<th></th></tr>';
+  rows.forEach(function(r){
+   h+='<tr>'+c.f.map(function(f){var v=r[f[0]];if(f[0]==='rp')v=rp(v);
+    var cl=(k==='uang'&&f[0]==='j')?(v==='Pemasukan'?' class="pos"':' class="neg"'):'';
+    return '<td'+cl+'>'+esc(v)+'</td>'}).join('')+'<td><button class="g" data-del="'+S[k].indexOf(r)+'" aria-label="Hapus catatan">Hapus</button></td></tr>';});
+  h+='</table></div>';
+  if(k==='telur')h+='<p style="color:var(--mut);margin:10px 0 0">Total: '+sum(S.telur,'n')+' butir, retak/pecah '+sum(S.telur,'x')+' butir.</p>';
+  if(k==='pakan')h+='<p style="color:var(--mut);margin:10px 0 0">Total pakan '+sum(S.pakan,'kg')+' kg, biaya '+rp(sum(S.pakan,'rp'))+'.</p>';
+  if(k==='uang'){var i=0,o=0;S.uang.forEach(function(r){if(r.j==='Pemasukan')i+=+r.rp;else o+=+r.rp});h+='<p style="color:var(--mut);margin:10px 0 0">Pemasukan '+rp(i)+', pengeluaran '+rp(o)+', saldo '+rp(i-o)+'.</p>'}
+ }
+ return h+'</div>';
+}
+function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function render(){
+ document.getElementById('flock').value=S.flock;document.getElementById('price').value=S.price;
+ nav();document.getElementById('main').innerHTML=tab==='ringkasan'?ringkasan():listing(tab);
+}
+document.addEventListener('click',function(e){
+ var t=e.target;
+ if(t.dataset.t){tab=t.dataset.t;render();}
+ else if(t.dataset.del!==undefined){if(confirm('Hapus catatan ini?')){S[tab].splice(+t.dataset.del,1);save();render();}}
+ else if(t.id==='reset'){if(confirm('Semua data akan dihapus. Lanjutkan?')){S={flock:100,price:3000,telur:[],pakan:[],sehat:[],uang:[]};save();render();}}
+ else if(t.id==='demo'){
+  for(var i=13;i>=0;i--){var d=new Date(Date.now()-i*864e5).toISOString().slice(0,10),n=Math.round(S.flock*(0.68+Math.random()*0.15));
+   S.telur.push({d:d,n:n,x:Math.round(n*0.02)});S.pakan.push({d:d,kg:Math.round(S.flock*0.155*10)/10,rp:Math.round(S.flock*0.155*7500)});}
+  S.uang.push({d:today,j:'Pemasukan',t:'Penjualan telur ke pengepul',rp:S.flock*0.7*S.price*7});
+  S.sehat.push({d:today,j:'Vaksin',q:S.flock,t:'Vaksin ND'});save();render();}
+});
+document.addEventListener('submit',function(e){
+ if(e.target.id!=='frm')return;e.preventDefault();
+ var o={};new FormData(e.target).forEach(function(v,k){o[k]=v});
+ S[tab].push(o);save();render();
+});
+document.addEventListener('change',function(e){
+ if(e.target.id==='flock'){S.flock=Math.max(0,+e.target.value||0);save();render();}
+ if(e.target.id==='price'){S.price=Math.max(0,+e.target.value||0);save();render();}
+});
+render();
+</script>
+</body>
+</html>
