@@ -1,152 +1,163 @@
-<!doctype html>
-<html lang="id">
-<head>
-<meta charset="utf-8">
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Kandang Telur – Manajemen Bebek Petelur</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<title>Peternakan Bebek Petelur</title>
 <style>
-:root{--bg:#eef4f1;--card:#fff;--ink:#12302e;--mut:#5d7673;--line:#d3e2de;--pri:#0f6b66;--egg:#bfe3da;--warn:#c2410c;--ok:#15803d;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1f1e;--card:#162c2a;--ink:#e4f2ef;--mut:#92b0ab;--line:#26433f;--pri:#4fc3b8;--egg:#1f4a45;--warn:#fb923c;--ok:#4ade80;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0e1f1e;--card:#162c2a;--ink:#e4f2ef;--mut:#92b0ab;--line:#26433f;--pri:#4fc3b8;--egg:#1f4a45;--warn:#fb923c;--ok:#4ade80;color-scheme:dark}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f4ee;--cd:#fff;--tx:#1f2a24;--mu:#6b756e;--pr:#2f7d5b;--bd:#e3dfd3;--in:#2f7d5b;--out:#c2543a;--ac:#e0a526}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121815;--cd:#1c2420;--tx:#e8eee9;--mu:#98a39b;--pr:#2a6a4d;--bd:#2d3832;--in:#4cb98a;--out:#e07a5f;--ac:#e8b84a}}
+:root[data-theme="dark"]{--bg:#121815;--cd:#1c2420;--tx:#e8eee9;--mu:#98a39b;--pr:#2a6a4d;--bd:#2d3832;--in:#4cb98a;--out:#e07a5f;--ac:#e8b84a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Bricolage Grotesque",system-ui,sans-serif}
-.wrap{max-width:880px;margin:0 auto;padding:16px}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-h1{font-size:1.7rem;font-weight:800;margin:0;letter-spacing:-.02em}
-h2{font-size:1.1rem;margin:0 0 10px}
-.set{display:flex;gap:8px;flex-wrap:wrap;font-size:.85rem;color:var(--mut)}
-.set label{display:flex;flex-direction:column;gap:2px}
-.set input{width:110px}
-nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px}
-nav button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px;border-radius:999px;font:inherit;cursor:pointer}
-nav button[aria-selected=true]{background:var(--pri);color:var(--bg);border-color:var(--pri);font-weight:600}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
-.stat{background:var(--egg);border-radius:14px;padding:12px 14px}
-.stat b{display:block;font-size:1.6rem;font-weight:800;line-height:1.1}
-.stat span{font-size:.85rem;color:var(--mut)}
-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
-label.f{display:flex;flex-direction:column;font-size:.85rem;color:var(--mut);gap:3px}
-input,select{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);width:100%}
-button.p{background:var(--pri);color:var(--bg);border:0;padding:10px 16px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}
-button.g{background:none;border:1px solid var(--line);color:var(--mut);padding:6px 10px;border-radius:8px;font:inherit;cursor:pointer}
-:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
-.tw{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:.92rem}
-th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
-th{color:var(--mut);font-weight:600}
-.empty{color:var(--mut);padding:14px 0}
-.neg{color:var(--warn)}.pos{color:var(--ok)}
-</style>
-</head>
-<body>
-<div class="wrap">
-<header>
-<h1>Kandang Telur</h1>
-<div class="set">
-<label>Populasi awal (ekor)<input id="flock" type="number" min="0"></label>
-<label>Harga telur (Rp/butir)<input id="price" type="number" min="0"></label>
-</div>
-</header>
-<nav role="tablist" id="nav"></nav>
-<main id="main"></main>
-</div>
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--pr);z-index:10}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--pr);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;gap:8px}
+.top span{font-size:13px;opacity:.9}
+nav{display:flex;gap:6px;overflow-x:auto;padding:10px 12px 0;max-width:900px;margin:auto}
+nav button{flex:none;background:var(--cd);color:var(--tx);border:1px solid var(--bd);border-radius:20px;padding:6px 14px;cursor:pointer}
+nav button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+main{max-width:900px;margin:auto;padding:12px}
+h3{margin:14px 0 8px}
+.card{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.grid .card{margin:0}
+.k{font-size:12px;color:var(--mu)}.v{font-size:20px;font-weight:700}
+.in{color:var(--in)}.out{color:var(--out)}.mu{color:var(--mu)}
+input,select,button{font:inherit}
+input,select{width:100%;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);margin:3px 0 8px}
+button{background:var(--bd);color:var(--tx);border:0;border-radius:8px;padding:8px 12px;cursor:pointer}
+button.pri{background:var(--pr);color:#fff;width:100%}
+.frm{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0 10px}
+.msg{background:color-mix(in srgb,var(--ac) 25%,transparent);border-radius:8px;padding:8px 10px;margin-bottom:10px}
+.sc{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+.bar{height:10px;border-radius:5px;background:var(--out);margin:2px 0 8px}
+.g{stroke:var(--bd)}.t{fill:var(--mu);font-size:10px}
+.lg span{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px}
+a{color:var(--pr);cursor:pointer;text-decoration:underline}
+</style></head><body><div id="app"></div>
 <script>
-var S;
-try{S=JSON.parse(localStorage.getItem('bp')||'null')}catch(e){}
-S=S||{flock:100,price:3000,telur:[],pakan:[],sehat:[],uang:[]};
-function save(){try{localStorage.setItem('bp',JSON.stringify(S))}catch(e){}}
-var rp=function(n){return 'Rp '+Math.round(n||0).toLocaleString('id-ID')};
-var today=new Date().toISOString().slice(0,10);
-var T={
- telur:{l:'Telur',f:[['d','date','Tanggal'],['n','number','Telur (butir)'],['x','number','Retak/pecah (butir)']]},
- pakan:{l:'Pakan',f:[['d','date','Tanggal'],['kg','number','Pakan (kg)'],['rp','number','Biaya (Rp)']]},
- sehat:{l:'Kesehatan',f:[['d','date','Tanggal'],['j','select','Jenis',['Vaksin','Obat/vitamin','Bebek sakit','Bebek mati']],['q','number','Jumlah ekor'],['t','text','Catatan']]},
- uang:{l:'Keuangan',f:[['d','date','Tanggal'],['j','select','Jenis',['Pemasukan','Pengeluaran']],['t','text','Keterangan'],['rp','number','Jumlah (Rp)']]}
-};
-var tab='ringkasan';
-function sum(a,k){return a.reduce(function(s,r){return s+(+r[k]||0)},0)}
-function pop(){return Math.max(0,S.flock-sum(S.sehat.filter(function(r){return r.j==='Bebek mati'}),'q'))}
-function byDate(a){return a.slice().sort(function(x,y){return x.d<y.d?-1:1})}
-function nav(){
- var h='<button role="tab" data-t="ringkasan" aria-selected="'+(tab==='ringkasan')+'">Ringkasan</button>';
- for(var k in T)h+='<button role="tab" data-t="'+k+'" aria-selected="'+(tab===k)+'">'+T[k].l+'</button>';
- document.getElementById('nav').innerHTML=h;
-}
-function chart(){
- var a=byDate(S.telur).slice(-14);
- if(!a.length)return '<p class="empty">Belum ada data telur. Catat produksi harian di tab Telur.</p>';
- var m=Math.max.apply(null,a.map(function(r){return +r.n||0}).concat([1])),w=100/a.length,s='';
- a.forEach(function(r,i){var h=(+r.n||0)/m*90;
-  s+='<rect x="'+(i*w+w*.15)+'" y="'+(100-h)+'" width="'+w*.7+'" height="'+h+'" rx="1" fill="var(--pri)"><title>'+r.d+': '+r.n+' butir</title></rect>';});
- return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:150px" role="img" aria-label="Produksi telur 14 hari terakhir">'+s+'</svg><div style="font-size:.8rem;color:var(--mut)">Produksi telur '+a.length+' hari terakhir (maks '+m+' butir)</div>';
-}
-function ringkasan(){
- var p=pop(),e=byDate(S.telur),last=e[e.length-1],hdp=last&&p?(+last.n/p*100):0;
- var pk=byDate(S.pakan),lp=pk[pk.length-1],gr=lp&&p?(+lp.kg*1000/p):0;
- var ym=today.slice(0,7),inc=0,out=0;
- S.uang.forEach(function(r){if((r.d||'').slice(0,7)===ym){if(r.j==='Pemasukan')inc+=+r.rp||0;else out+=+r.rp||0}});
- S.pakan.forEach(function(r){if((r.d||'').slice(0,7)===ym)out+=+r.rp||0});
- var val=last?((+last.n||0)-(+last.x||0))*S.price:0,net=inc-out;
- var st=[[p+' ekor','Populasi saat ini'],[last?last.n+' butir':'–','Telur terakhir dicatat'],[last?hdp.toFixed(1)+'%':'–','Produksi harian (HDP)'],[lp?Math.round(gr)+' g':'–','Pakan per ekor (terakhir)'],[rp(val),'Nilai telur terakhir (layak jual)'],[rp(net),'Laba bulan ini']];
- var h='<div class="stats">'+st.map(function(x){return '<div class="stat"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>'}).join('')+'</div>';
- h+='<div class="card"><h2>Tren produksi telur</h2>'+chart()+'</div>';
- h+='<div class="card"><h2>Acuan</h2><p style="margin:0;color:var(--mut)">Bebek petelur yang sehat umumnya menghasilkan telur di atas 70% per hari dan makan sekitar 140–170 gram pakan per ekor. Jika HDP turun tajam, cek pakan, air, dan kesehatan kawanan.</p></div>';
- h+='<button class="g" id="demo">Isi data contoh</button> <button class="g" id="reset">Hapus semua data</button>';
- return h;
-}
-function listing(k){
- var c=T[k],h='<div class="card"><h2>Tambah catatan: '+c.l+'</h2><form id="frm">';
- c.f.forEach(function(f){
-  h+='<label class="f">'+f[2];
-  if(f[1]==='select')h+='<select name="'+f[0]+'">'+f[3].map(function(o){return '<option>'+o+'</option>'}).join('')+'</select>';
-  else h+='<input name="'+f[0]+'" type="'+f[1]+'"'+(f[1]==='date'?' value="'+today+'"':'')+(f[1]==='number'?' min="0" step="any"':'')+' required>';
-  h+='</label>';});
- h+='<button class="p" type="submit">Simpan catatan</button></form></div>';
- var rows=byDate(S[k]).reverse();
- h+='<div class="card"><h2>Riwayat</h2>';
- if(!rows.length)h+='<p class="empty">Belum ada catatan. Isi formulir di atas lalu simpan.</p>';
- else{
-  h+='<div class="tw"><table><tr>'+c.f.map(function(f){return '<th>'+f[2]+'</th>'}).join('')+'<th></th></tr>';
-  rows.forEach(function(r){
-   h+='<tr>'+c.f.map(function(f){var v=r[f[0]];if(f[0]==='rp')v=rp(v);
-    var cl=(k==='uang'&&f[0]==='j')?(v==='Pemasukan'?' class="pos"':' class="neg"'):'';
-    return '<td'+cl+'>'+esc(v)+'</td>'}).join('')+'<td><button class="g" data-del="'+S[k].indexOf(r)+'" aria-label="Hapus catatan">Hapus</button></td></tr>';});
-  h+='</table></div>';
-  if(k==='telur')h+='<p style="color:var(--mut);margin:10px 0 0">Total: '+sum(S.telur,'n')+' butir, retak/pecah '+sum(S.telur,'x')+' butir.</p>';
-  if(k==='pakan')h+='<p style="color:var(--mut);margin:10px 0 0">Total pakan '+sum(S.pakan,'kg')+' kg, biaya '+rp(sum(S.pakan,'rp'))+'.</p>';
-  if(k==='uang'){var i=0,o=0;S.uang.forEach(function(r){if(r.j==='Pemasukan')i+=+r.rp;else o+=+r.rp});h+='<p style="color:var(--mut);margin:10px 0 0">Pemasukan '+rp(i)+', pengeluaran '+rp(o)+', saldo '+rp(i-o)+'.</p>'}
- }
- return h+'</div>';
-}
-function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let D={prod:[],fin:[],sales:[],price:{butir:2500,tray:70000,afkir:60000,pupuk:15000}},db,ME={name:'',admin:false,write:true},status='load',dirty=0,tab,cart={},msg='';
+const PR=[{id:'butir',n:'Telur Bebek (butir)',e:1},{id:'tray',n:'Telur Bebek (tray 30)',e:30},{id:'afkir',n:'Bebek Afkir (ekor)',e:0},{id:'pupuk',n:'Pupuk Kandang (karung)',e:0}];
+const CATS=['Pakan','Obat dan Vitamin','Gaji','Listrik dan Air','Perawatan Kandang','Bibit / DOC','Lainnya'];
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>ymd(new Date());
+const lastDays=n=>Array.from({length:n},(_,i)=>ymd(new Date(Date.now()-(n-1-i)*864e5)));
+const lastMonths=n=>Array.from({length:n},(_,i)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-(n-1-i));return d.getFullYear()+'-'+pad(d.getMonth()+1)});
+const rp=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const adm=()=>ME.admin;
+const allFin=()=>[...D.fin,...D.sales.map(s=>({id:s.id,d:s.d,t:'in',c:'Penjualan Kasir',x:'Kasir: '+s.by,a:s.total,s:1}))];
+const sum=(t,m)=>allFin().filter(f=>f.t===t&&f.d.startsWith(m)).reduce((a,f)=>a+f.a,0);
+const eggStock=()=>D.prod.reduce((a,p)=>a+p.eggs-p.bad,0)-D.sales.reduce((a,s)=>a+s.items.reduce((b,i)=>b+i.q*i.e,0),0);
+const msgH=()=>msg?`<div class="msg">${esc(msg)}</div>`:'';
+const fk=v=>v>=1e6?(v/1e6).toFixed(1)+'jt':v>=1e3?Math.round(v/1e3)+'rb':Math.round(v);
+
+async function put(col,id,data){
+ if(!ME.write){msg='Akun Anda hanya dapat melihat data.';render();return false}
+ try{await db.collection(col).doc(id).set(data);return true}
+ catch(e){msg='Gagal menyimpan: '+(e.code==='invalid_argument'?'akses akun tidak cukup.':(e.message||e.code));render();return false}}
+async function del(col,id){try{await db.collection(col).doc(id).delete()}catch(e){msg='Gagal menghapus.';render()}}
+
+function bars(labels,series,colors){
+ const W=640,H=180,p=30,n=labels.length,max=Math.max(1,...series.flat()),gw=(W-p)/n,bw=gw/(series.length+1);
+ let s=`<svg viewBox="0 0 ${W} ${H+20}" style="width:100%;height:auto">`;
+ for(let i=0;i<=4;i++){const y=H-H*i/4;s+=`<line class="g" x1="${p}" x2="${W}" y1="${y}" y2="${y}"/><text class="t" x="0" y="${y+4}">${fk(max*i/4)}</text>`}
+ series.forEach((a,j)=>a.forEach((v,i)=>{const h=H*v/max;s+=`<rect x="${p+i*gw+bw/2+j*bw}" y="${H-h}" width="${bw}" height="${h}" rx="2" style="fill:${colors[j]}"/>`}));
+ labels.forEach((l,i)=>s+=`<text class="t" x="${p+i*gw+gw/2}" y="${H+14}" text-anchor="middle">${l}</text>`);
+ return s+'</svg>'}
+function go(t){tab=t;msg='';render()}
+
+function vDash(){
+ const t=today(),mo=t.slice(0,7),tp=D.prod.filter(p=>p.d===t),te=tp.reduce((a,p)=>a+p.eggs,0),td=tp.reduce((a,p)=>a+p.ducks,0);
+ const i=sum('in',mo),o=sum('out',mo);
+ const days=lastDays(14),eg=days.map(d=>D.prod.filter(p=>p.d===d).reduce((a,p)=>a+p.eggs-p.bad,0));
+ const ms=lastMonths(6),mi=ms.map(m=>sum('in',m)),mx=ms.map(m=>sum('out',m));
+ const cats={};allFin().filter(f=>f.t==='out'&&f.d.startsWith(mo)).forEach(f=>cats[f.c]=(cats[f.c]||0)+f.a);
+ const cm=Math.max(1,...Object.values(cats));
+ const C=(k,v,c='')=>`<div class="card"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`;
+ return `<div class="grid">${C('Stok telur',eggStock()+' butir')}${C('Telur hari ini',te+' butir')}${C('HDP hari ini',td?(te/td*100).toFixed(1)+'%':'-')}${C('Pendapatan bulan ini',rp(i),'in')}${C('Pengeluaran bulan ini',rp(o),'out')}${C('Laba bulan ini',rp(i-o),i-o>=0?'in':'out')}</div>
+ <div class="card"><b>Produksi telur bersih, 14 hari terakhir</b>${bars(days.map(d=>d.slice(8)),[eg],['var(--ac)'])}</div>
+ <div class="card"><b>Pendapatan vs pengeluaran, 6 bulan</b><div class="lg k"><span style="background:var(--in)"></span>Pendapatan<span style="background:var(--out)"></span>Pengeluaran</div>${bars(ms.map(m=>m.slice(5)),[mi,mx],['var(--in)','var(--out)'])}</div>
+ <div class="card"><b>Pengeluaran bulan ini per kategori</b>${Object.keys(cats).map(k=>`<div class="k">${esc(k)} - ${rp(cats[k])}</div><div class="bar" style="width:${cats[k]/cm*100}%"></div>`).join('')||'<p class="mu">Belum ada pengeluaran.</p>'}</div>`}
+
+async function addProd(){
+ const g=i=>+$(i).value||0,d=$('#pd').value;
+ if(!d||!g('#pk')||!g('#pe')){msg='Isi tanggal, jumlah bebek, dan telur.';return render()}
+ if(g('#pb')>g('#pe')){msg='Telur rusak melebihi telur yang dihasilkan.';return render()}
+ msg='Produksi tersimpan.';await put('prod',uid(),{d,ducks:g('#pk'),eggs:g('#pe'),bad:g('#pb'),feed:g('#pf')})}
+function vProd(){
+ const rows=[...D.prod].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,40);
+ return `${msgH()}<div class="card"><b>Catat Produksi Harian</b><div class="frm"><div><label class="k">Tanggal</label><input id="pd" type="date" value="${today()}"></div><div><label class="k">Jumlah bebek</label><input id="pk" type="number" min="0"></div><div><label class="k">Telur dihasilkan</label><input id="pe" type="number" min="0"></div><div><label class="k">Telur retak/rusak</label><input id="pb" type="number" min="0" value="0"></div><div><label class="k">Pakan (kg)</label><input id="pf" type="number" min="0" step="0.1"></div></div><button class="pri" onclick="addProd()">Simpan</button></div>
+ <div class="card sc"><table><tr><th>Tanggal</th><th>Bebek</th><th>Telur</th><th>Rusak</th><th>HDP</th><th>Pakan kg</th><th></th></tr>${rows.map(p=>`<tr><td>${p.d}</td><td>${p.ducks}</td><td>${p.eggs}</td><td>${p.bad}</td><td>${(p.eggs/p.ducks*100).toFixed(1)}%</td><td>${p.feed}</td><td>${adm()?`<button onclick="del('prod','${p.id}')">Hapus</button>`:''}</td></tr>`).join('')||'<tr><td class="mu">Belum ada data.</td></tr>'}</table></div>`}
+
+function add(k,n){cart[k]=Math.max(0,(cart[k]||0)+n);msg='';render()}
+async function setPrice(k,v){if(!adm())return;try{await db.doc('settings/price').set({...D.price,[k]:Math.max(0,+v||0)})}catch(e){msg='Gagal menyimpan harga.';render()}}
+async function pay(){
+ const ks=Object.keys(cart).filter(k=>cart[k]>0);
+ if(!ks.length){msg='Keranjang masih kosong.';return render()}
+ const items=ks.map(k=>{const p=PR.find(x=>x.id===k);return{n:p.n,q:cart[k],p:D.price[k],e:p.e}});
+ const total=items.reduce((a,i)=>a+i.q*i.p,0),eg=items.reduce((a,i)=>a+i.q*i.e,0),paid=+$('#paid').value||0;
+ if(eg>eggStock()){msg='Stok telur tidak cukup.';return render()}
+ if(paid<total){msg='Uang diterima kurang dari total.';return render()}
+ cart={};msg='Transaksi berhasil. Kembalian '+rp(paid-total);
+ await put('sales',uid(),{d:today(),by:ME.name,items,total})}
+function vKasir(){
+ const ks=Object.keys(cart).filter(k=>cart[k]>0),tot=ks.reduce((a,k)=>a+cart[k]*D.price[k],0);
+ const hist=[...D.sales].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,10);
+ return `<p class="mu">Stok telur: <b>${eggStock()} butir</b></p>${msgH()}
+ <div class="grid">${PR.map(p=>`<div class="card"><b>${p.n}</b><div>${adm()?`Rp <input type="number" style="width:100px" value="${D.price[p.id]}" onchange="setPrice('${p.id}',this.value)">`:rp(D.price[p.id])}</div><button onclick="add('${p.id}',1)">+ Tambah</button></div>`).join('')}</div>
+ <div class="card"><b>Keranjang</b>${ks.map(k=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin:6px 0"><span>${PR.find(p=>p.id===k).n}<br><span class="k">${rp(D.price[k])}</span></span><span><button onclick="add('${k}',-1)">-</button> ${cart[k]} <button onclick="add('${k}',1)">+</button></span></div>`).join('')||'<p class="mu">Kosong</p>'}
+ <h3>Total ${rp(tot)}</h3><label class="k">Uang diterima</label><input id="paid" type="number" min="0"><button class="pri" onclick="pay()">Bayar</button></div>
+ <div class="card sc"><b>Riwayat penjualan</b><table><tr><th>Tanggal</th><th>Kasir</th><th>Item</th><th>Total</th></tr>${hist.map(s=>`<tr><td>${s.d}</td><td>${esc(s.by)}</td><td>${s.items.map(i=>esc(i.n)+' x'+i.q).join(', ')}</td><td>${rp(s.total)}</td></tr>`).join('')||'<tr><td class="mu">Belum ada transaksi.</td></tr>'}</table></div>`}
+
+async function addFin(){
+ const a=+$('#fa').value||0,d=$('#fd').value,t=$('#ft').value;
+ if(!d||a<=0){msg='Isi tanggal dan jumlah uang.';return render()}
+ msg='Transaksi tersimpan.';await put('fin',uid(),{d,t,c:t==='in'?'Pendapatan Lain':$('#fc').value,x:$('#fx').value.trim(),a})}
+function vFin(){
+ const mo=today().slice(0,7),i=sum('in',mo),o=sum('out',mo),rows=allFin().sort((a,b)=>b.d.localeCompare(a.d)).slice(0,50);
+ return `${msgH()}<div class="grid"><div class="card"><div class="k">Pendapatan bulan ini</div><div class="v in">${rp(i)}</div></div><div class="card"><div class="k">Pengeluaran bulan ini</div><div class="v out">${rp(o)}</div></div><div class="card"><div class="k">Laba bulan ini</div><div class="v">${rp(i-o)}</div></div></div>
+ <div class="card"><b>Catat Transaksi</b><div class="frm"><div><label class="k">Jenis</label><select id="ft"><option value="out">Pengeluaran</option><option value="in">Pendapatan</option></select></div><div><label class="k">Kategori (pengeluaran)</label><select id="fc">${CATS.map(c=>`<option>${c}</option>`).join('')}</select></div><div><label class="k">Keterangan</label><input id="fx"></div><div><label class="k">Jumlah (Rp)</label><input id="fa" type="number" min="0"></div><div><label class="k">Tanggal</label><input id="fd" type="date" value="${today()}"></div></div><button class="pri" onclick="addFin()">Simpan</button></div>
+ <div class="card sc"><table><tr><th>Tanggal</th><th>Jenis</th><th>Kategori</th><th>Keterangan</th><th>Jumlah</th><th></th></tr>${rows.map(f=>`<tr><td>${f.d}</td><td class="${f.t}">${f.t==='in'?'Masuk':'Keluar'}</td><td>${esc(f.c)}</td><td>${esc(f.x||'')}</td><td>${rp(f.a)}</td><td>${f.s?'':`<button onclick="del('fin','${f.id}')">Hapus</button>`}</td></tr>`).join('')||'<tr><td class="mu">Belum ada data.</td></tr>'}</table></div>`}
+
+async function importOld(){
+ let o;try{o=JSON.parse(localStorage.getItem('bp_data'))}catch(e){}
+ if(!o){msg='Tidak ada data lama di browser ini.';return render()}
+ let n=0;
+ for(const p of o.prod||[]){if(await put('prod',p.id,p))n++}
+ for(const f of o.fin||[]){if(!f.s&&await put('fin',f.id,f))n++}
+ for(const s of o.sales||[]){if(await put('sales',s.id,s))n++}
+ if(o.price)try{await db.doc('settings/price').set(o.price)}catch(e){}
+ msg=n+' catatan lama diimpor.';render()}
+function vAkun(){
+ let old=false;try{old=!!localStorage.getItem('bp_data')}catch(e){}
+ return `${msgH()}<div class="card"><b>${esc(ME.name)}</b><div class="mu">Peran: ${adm()?'Admin (pemilik/editor)':'Kasir'}${ME.write?'':' - hanya lihat'}</div></div>
+ <div class="card"><b>Kelola akun</b><p class="k">Login memakai akun Claude. Untuk menambah kasir, bagikan halaman ini lewat menu Bagikan dan beri akses Contributor. Pemilik dan Editor otomatis menjadi Admin, Contributor menjadi Kasir. Semua data tersimpan bersama dan tampil langsung di semua perangkat.</p>${adm()&&old?'<button onclick="importOld()">Impor data lama dari browser ini</button>':''}</div>`}
+
+const V={dash:vDash,prod:vProd,kasir:vKasir,fin:vFin,akun:vAkun};
 function render(){
- document.getElementById('flock').value=S.flock;document.getElementById('price').value=S.price;
- nav();document.getElementById('main').innerHTML=tab==='ringkasan'?ringkasan():listing(tab);
-}
-document.addEventListener('click',function(e){
- var t=e.target;
- if(t.dataset.t){tab=t.dataset.t;render();}
- else if(t.dataset.del!==undefined){if(confirm('Hapus catatan ini?')){S[tab].splice(+t.dataset.del,1);save();render();}}
- else if(t.id==='reset'){if(confirm('Semua data akan dihapus. Lanjutkan?')){S={flock:100,price:3000,telur:[],pakan:[],sehat:[],uang:[]};save();render();}}
- else if(t.id==='demo'){
-  for(var i=13;i>=0;i--){var d=new Date(Date.now()-i*864e5).toISOString().slice(0,10),n=Math.round(S.flock*(0.68+Math.random()*0.15));
-   S.telur.push({d:d,n:n,x:Math.round(n*0.02)});S.pakan.push({d:d,kg:Math.round(S.flock*0.155*10)/10,rp:Math.round(S.flock*0.155*7500)});}
-  S.uang.push({d:today,j:'Pemasukan',t:'Penjualan telur ke pengepul',rp:S.flock*0.7*S.price*7});
-  S.sehat.push({d:today,j:'Vaksin',q:S.flock,t:'Vaksin ND'});save();render();}
-});
-document.addEventListener('submit',function(e){
- if(e.target.id!=='frm')return;e.preventDefault();
- var o={};new FormData(e.target).forEach(function(v,k){o[k]=v});
- S[tab].push(o);save();render();
-});
-document.addEventListener('change',function(e){
- if(e.target.id==='flock'){S.flock=Math.max(0,+e.target.value||0);save();render();}
- if(e.target.id==='price'){S.price=Math.max(0,+e.target.value||0);save();render();}
-});
-render();
-</script>
-</body>
-</html>
+ const A=$('#app');
+ if(status!=='ok'){A.innerHTML=`<main><div class="card"><h3>🦆 Peternakan Bebek Petelur</h3><p class="mu">${status==='load'?'Memuat data...':'Penyimpanan bersama tidak tersedia. Buka halaman ini dari akun Claude yang diberi akses oleh pemilik.'}</p></div></main>`;return}
+ const T=adm()?[['dash','Dashboard'],['prod','Produksi'],['kasir','Kasir'],['fin','Keuangan'],['akun','Akun']]:[['kasir','Kasir'],['prod','Produksi'],['akun','Akun']];
+ if(!T.some(t=>t[0]===tab))tab=T[0][0];
+ A.innerHTML=`<header class="top"><b>🦆 Bebek Petelur</b><span>${esc(ME.name)} · ${adm()?'Admin':'Kasir'}</span></header><nav>${T.map(t=>`<button class="${t[0]===tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}</nav><main>${V[tab]()}</main>`}
+function draw(){if(/INPUT|SELECT/.test(document.activeElement?.tagName||'')){dirty=1;return}render()}
+document.addEventListener('focusout',()=>{if(dirty){dirty=0;setTimeout(()=>{if(!/INPUT|SELECT/.test(document.activeElement?.tagName||''))render()},50)}});
+function sub(col){db.collection(col).onSnapshot(s=>{D[col]=s.docs.map(x=>({...x.data(),id:x.id}));draw()},e=>{msg='Koneksi data '+col+' terputus ('+e.code+').';draw()})}
+(async()=>{
+ render();
+ try{
+  db=await claude.use('db');const U=await claude.use('user');
+  if(!db){status='nodb';return render()}
+  if(U){ME.admin=!!(await U.isOwner()||await U.canEdit());ME.write=(await U.can('data.write'))!==false;try{ME.name=(await U.me()).name||''}catch(e){}}
+  ME.name=ME.name||'Pengguna';
+  status='ok';
+  sub('prod');sub('sales');if(ME.admin)sub('fin');
+  db.doc('settings/price').onSnapshot(s=>{if(s.exists)D.price={...D.price,...s.data()};draw()},()=>{});
+  render();
+ }catch(e){status='nodb';render()}
+})();
+</script></body></html>
