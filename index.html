@@ -33,12 +33,17 @@ td,th{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:left;white-sp
 .bar{height:10px;border-radius:5px;background:var(--out);margin:2px 0 8px}
 .g{stroke:var(--bd)}.t{fill:var(--mu);font-size:10px}
 .lg span{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px}
+.auth{max-width:360px;margin:8vh auto;padding:0 12px}
 a{color:var(--pr);cursor:pointer;text-decoration:underline}
 </style></head><body><div id="app"></div>
 <script>
+const mem={};
+const ld=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return mem[k]??null}};
+const sv=(k,v)=>{mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let D={prod:[],fin:[],sales:[],price:{butir:2500,tray:70000,afkir:60000,pupuk:15000}},db,ME={name:'',admin:false,write:true},status='load',dirty=0,tab,cart={},msg='';
+let users=ld('bp_users')||[],me=ld('bp_me'),D=ld('bp_data')||{prod:[],fin:[],sales:[],price:{butir:2500,tray:70000,afkir:60000,pupuk:15000}};
+let tab,cart={},msg='',mode='login';
 const PR=[{id:'butir',n:'Telur Bebek (butir)',e:1},{id:'tray',n:'Telur Bebek (tray 30)',e:30},{id:'afkir',n:'Bebek Afkir (ekor)',e:0},{id:'pupuk',n:'Pupuk Kandang (karung)',e:0}];
 const CATS=['Pakan','Obat dan Vitamin','Gaji','Listrik dan Air','Perawatan Kandang','Bibit / DOC','Lainnya'];
 const pad=n=>String(n).padStart(2,'0');
@@ -48,18 +53,14 @@ const lastDays=n=>Array.from({length:n},(_,i)=>ymd(new Date(Date.now()-(n-1-i)*8
 const lastMonths=n=>Array.from({length:n},(_,i)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-(n-1-i));return d.getFullYear()+'-'+pad(d.getMonth()+1)});
 const rp=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-const adm=()=>ME.admin;
-const allFin=()=>[...D.fin,...D.sales.map(s=>({id:s.id,d:s.d,t:'in',c:'Penjualan Kasir',x:'Kasir: '+s.by,a:s.total,s:1}))];
-const sum=(t,m)=>allFin().filter(f=>f.t===t&&f.d.startsWith(m)).reduce((a,f)=>a+f.a,0);
+const save=()=>sv('bp_data',D);
+const cur=()=>users.find(u=>u.n===me);
+const adm=()=>cur()?.r==='admin';
+const sum=(t,m)=>D.fin.filter(f=>f.t===t&&f.d.startsWith(m)).reduce((a,f)=>a+f.a,0);
 const eggStock=()=>D.prod.reduce((a,p)=>a+p.eggs-p.bad,0)-D.sales.reduce((a,s)=>a+s.items.reduce((b,i)=>b+i.q*i.e,0),0);
 const msgH=()=>msg?`<div class="msg">${esc(msg)}</div>`:'';
 const fk=v=>v>=1e6?(v/1e6).toFixed(1)+'jt':v>=1e3?Math.round(v/1e3)+'rb':Math.round(v);
-
-async function put(col,id,data){
- if(!ME.write){msg='Akun Anda hanya dapat melihat data.';render();return false}
- try{await db.collection(col).doc(id).set(data);return true}
- catch(e){msg='Gagal menyimpan: '+(e.code==='invalid_argument'?'akses akun tidak cukup.':(e.message||e.code));render();return false}}
-async function del(col,id){try{await db.collection(col).doc(id).delete()}catch(e){msg='Gagal menghapus.';render()}}
+async function hash(p){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('bebek:'+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 
 function bars(labels,series,colors){
  const W=640,H=180,p=30,n=labels.length,max=Math.max(1,...series.flat()),gw=(W-p)/n,bw=gw/(series.length+1);
@@ -68,14 +69,25 @@ function bars(labels,series,colors){
  series.forEach((a,j)=>a.forEach((v,i)=>{const h=H*v/max;s+=`<rect x="${p+i*gw+bw/2+j*bw}" y="${H-h}" width="${bw}" height="${h}" rx="2" style="fill:${colors[j]}"/>`}));
  labels.forEach((l,i)=>s+=`<text class="t" x="${p+i*gw+gw/2}" y="${H+14}" text-anchor="middle">${l}</text>`);
  return s+'</svg>'}
+
+async function doAuth(){
+ const n=$('#un').value.trim().toLowerCase(),p=$('#pw').value;
+ if(!n||p.length<4){msg='Isi username dan kata sandi (minimal 4 karakter).';return render()}
+ const h=await hash(p);
+ if(mode==='login'){if(!users.find(x=>x.n===n&&x.h===h)){msg='Username atau kata sandi salah.';return render()}}
+ else{if(users.some(x=>x.n===n)){msg='Username sudah dipakai.';return render()}users.push({n,h,r:users.length?'kasir':'admin'});sv('bp_users',users)}
+ me=n;sv('bp_me',me);msg='';tab=null;render()}
+function setMode(m){mode=m;msg='';render()}
+function logout(){me=null;sv('bp_me',null);cart={};msg='';render()}
 function go(t){tab=t;msg='';render()}
+function delUser(n){users=users.filter(u=>u.n!==n);sv('bp_users',users);render()}
 
 function vDash(){
  const t=today(),mo=t.slice(0,7),tp=D.prod.filter(p=>p.d===t),te=tp.reduce((a,p)=>a+p.eggs,0),td=tp.reduce((a,p)=>a+p.ducks,0);
  const i=sum('in',mo),o=sum('out',mo);
  const days=lastDays(14),eg=days.map(d=>D.prod.filter(p=>p.d===d).reduce((a,p)=>a+p.eggs-p.bad,0));
  const ms=lastMonths(6),mi=ms.map(m=>sum('in',m)),mx=ms.map(m=>sum('out',m));
- const cats={};allFin().filter(f=>f.t==='out'&&f.d.startsWith(mo)).forEach(f=>cats[f.c]=(cats[f.c]||0)+f.a);
+ const cats={};D.fin.filter(f=>f.t==='out'&&f.d.startsWith(mo)).forEach(f=>cats[f.c]=(cats[f.c]||0)+f.a);
  const cm=Math.max(1,...Object.values(cats));
  const C=(k,v,c='')=>`<div class="card"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`;
  return `<div class="grid">${C('Stok telur',eggStock()+' butir')}${C('Telur hari ini',te+' butir')}${C('HDP hari ini',td?(te/td*100).toFixed(1)+'%':'-')}${C('Pendapatan bulan ini',rp(i),'in')}${C('Pengeluaran bulan ini',rp(o),'out')}${C('Laba bulan ini',rp(i-o),i-o>=0?'in':'out')}</div>
@@ -83,81 +95,64 @@ function vDash(){
  <div class="card"><b>Pendapatan vs pengeluaran, 6 bulan</b><div class="lg k"><span style="background:var(--in)"></span>Pendapatan<span style="background:var(--out)"></span>Pengeluaran</div>${bars(ms.map(m=>m.slice(5)),[mi,mx],['var(--in)','var(--out)'])}</div>
  <div class="card"><b>Pengeluaran bulan ini per kategori</b>${Object.keys(cats).map(k=>`<div class="k">${esc(k)} - ${rp(cats[k])}</div><div class="bar" style="width:${cats[k]/cm*100}%"></div>`).join('')||'<p class="mu">Belum ada pengeluaran.</p>'}</div>`}
 
-async function addProd(){
+function addProd(){
  const g=i=>+$(i).value||0,d=$('#pd').value;
  if(!d||!g('#pk')||!g('#pe')){msg='Isi tanggal, jumlah bebek, dan telur.';return render()}
  if(g('#pb')>g('#pe')){msg='Telur rusak melebihi telur yang dihasilkan.';return render()}
- msg='Produksi tersimpan.';await put('prod',uid(),{d,ducks:g('#pk'),eggs:g('#pe'),bad:g('#pb'),feed:g('#pf')})}
+ D.prod.push({id:uid(),d,ducks:g('#pk'),eggs:g('#pe'),bad:g('#pb'),feed:g('#pf')});save();msg='Produksi tersimpan.';render()}
+function delProd(id){D.prod=D.prod.filter(p=>p.id!==id);save();render()}
 function vProd(){
  const rows=[...D.prod].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,40);
  return `${msgH()}<div class="card"><b>Catat Produksi Harian</b><div class="frm"><div><label class="k">Tanggal</label><input id="pd" type="date" value="${today()}"></div><div><label class="k">Jumlah bebek</label><input id="pk" type="number" min="0"></div><div><label class="k">Telur dihasilkan</label><input id="pe" type="number" min="0"></div><div><label class="k">Telur retak/rusak</label><input id="pb" type="number" min="0" value="0"></div><div><label class="k">Pakan (kg)</label><input id="pf" type="number" min="0" step="0.1"></div></div><button class="pri" onclick="addProd()">Simpan</button></div>
- <div class="card sc"><table><tr><th>Tanggal</th><th>Bebek</th><th>Telur</th><th>Rusak</th><th>HDP</th><th>Pakan kg</th><th></th></tr>${rows.map(p=>`<tr><td>${p.d}</td><td>${p.ducks}</td><td>${p.eggs}</td><td>${p.bad}</td><td>${(p.eggs/p.ducks*100).toFixed(1)}%</td><td>${p.feed}</td><td>${adm()?`<button onclick="del('prod','${p.id}')">Hapus</button>`:''}</td></tr>`).join('')||'<tr><td class="mu">Belum ada data.</td></tr>'}</table></div>`}
+ <div class="card sc"><table><tr><th>Tanggal</th><th>Bebek</th><th>Telur</th><th>Rusak</th><th>HDP</th><th>Pakan kg</th><th></th></tr>${rows.map(p=>`<tr><td>${p.d}</td><td>${p.ducks}</td><td>${p.eggs}</td><td>${p.bad}</td><td>${(p.eggs/p.ducks*100).toFixed(1)}%</td><td>${p.feed}</td><td>${adm()?`<button onclick="delProd('${p.id}')">Hapus</button>`:''}</td></tr>`).join('')||'<tr><td class="mu">Belum ada data.</td></tr>'}</table></div>`}
 
 function add(k,n){cart[k]=Math.max(0,(cart[k]||0)+n);msg='';render()}
-async function setPrice(k,v){if(!adm())return;try{await db.doc('settings/price').set({...D.price,[k]:Math.max(0,+v||0)})}catch(e){msg='Gagal menyimpan harga.';render()}}
-async function pay(){
+function setPrice(k,v){D.price[k]=Math.max(0,+v||0);save();render()}
+function pay(){
  const ks=Object.keys(cart).filter(k=>cart[k]>0);
  if(!ks.length){msg='Keranjang masih kosong.';return render()}
  const items=ks.map(k=>{const p=PR.find(x=>x.id===k);return{n:p.n,q:cart[k],p:D.price[k],e:p.e}});
  const total=items.reduce((a,i)=>a+i.q*i.p,0),eg=items.reduce((a,i)=>a+i.q*i.e,0),paid=+$('#paid').value||0;
  if(eg>eggStock()){msg='Stok telur tidak cukup.';return render()}
  if(paid<total){msg='Uang diterima kurang dari total.';return render()}
- cart={};msg='Transaksi berhasil. Kembalian '+rp(paid-total);
- await put('sales',uid(),{d:today(),by:ME.name,items,total})}
+ const d=today(),id=uid();
+ D.sales.push({id,d,by:me,items,total});D.fin.push({id:uid(),d,t:'in',c:'Penjualan Kasir',x:'Kasir: '+me,a:total,s:id});save();
+ cart={};msg='Transaksi berhasil. Kembalian '+rp(paid-total);render()}
 function vKasir(){
  const ks=Object.keys(cart).filter(k=>cart[k]>0),tot=ks.reduce((a,k)=>a+cart[k]*D.price[k],0);
- const hist=[...D.sales].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,10);
+ const hist=[...D.sales].reverse().slice(0,10);
  return `<p class="mu">Stok telur: <b>${eggStock()} butir</b></p>${msgH()}
  <div class="grid">${PR.map(p=>`<div class="card"><b>${p.n}</b><div>${adm()?`Rp <input type="number" style="width:100px" value="${D.price[p.id]}" onchange="setPrice('${p.id}',this.value)">`:rp(D.price[p.id])}</div><button onclick="add('${p.id}',1)">+ Tambah</button></div>`).join('')}</div>
  <div class="card"><b>Keranjang</b>${ks.map(k=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin:6px 0"><span>${PR.find(p=>p.id===k).n}<br><span class="k">${rp(D.price[k])}</span></span><span><button onclick="add('${k}',-1)">-</button> ${cart[k]} <button onclick="add('${k}',1)">+</button></span></div>`).join('')||'<p class="mu">Kosong</p>'}
  <h3>Total ${rp(tot)}</h3><label class="k">Uang diterima</label><input id="paid" type="number" min="0"><button class="pri" onclick="pay()">Bayar</button></div>
  <div class="card sc"><b>Riwayat penjualan</b><table><tr><th>Tanggal</th><th>Kasir</th><th>Item</th><th>Total</th></tr>${hist.map(s=>`<tr><td>${s.d}</td><td>${esc(s.by)}</td><td>${s.items.map(i=>esc(i.n)+' x'+i.q).join(', ')}</td><td>${rp(s.total)}</td></tr>`).join('')||'<tr><td class="mu">Belum ada transaksi.</td></tr>'}</table></div>`}
 
-async function addFin(){
+function addFin(){
  const a=+$('#fa').value||0,d=$('#fd').value,t=$('#ft').value;
  if(!d||a<=0){msg='Isi tanggal dan jumlah uang.';return render()}
- msg='Transaksi tersimpan.';await put('fin',uid(),{d,t,c:t==='in'?'Pendapatan Lain':$('#fc').value,x:$('#fx').value.trim(),a})}
+ D.fin.push({id:uid(),d,t,c:t==='in'?'Pendapatan Lain':$('#fc').value,x:$('#fx').value.trim(),a});save();msg='Transaksi tersimpan.';render()}
+function delFin(id){D.fin=D.fin.filter(f=>f.id!==id);save();render()}
 function vFin(){
- const mo=today().slice(0,7),i=sum('in',mo),o=sum('out',mo),rows=allFin().sort((a,b)=>b.d.localeCompare(a.d)).slice(0,50);
+ const mo=today().slice(0,7),i=sum('in',mo),o=sum('out',mo),rows=[...D.fin].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,50);
  return `${msgH()}<div class="grid"><div class="card"><div class="k">Pendapatan bulan ini</div><div class="v in">${rp(i)}</div></div><div class="card"><div class="k">Pengeluaran bulan ini</div><div class="v out">${rp(o)}</div></div><div class="card"><div class="k">Laba bulan ini</div><div class="v">${rp(i-o)}</div></div></div>
  <div class="card"><b>Catat Transaksi</b><div class="frm"><div><label class="k">Jenis</label><select id="ft"><option value="out">Pengeluaran</option><option value="in">Pendapatan</option></select></div><div><label class="k">Kategori (pengeluaran)</label><select id="fc">${CATS.map(c=>`<option>${c}</option>`).join('')}</select></div><div><label class="k">Keterangan</label><input id="fx"></div><div><label class="k">Jumlah (Rp)</label><input id="fa" type="number" min="0"></div><div><label class="k">Tanggal</label><input id="fd" type="date" value="${today()}"></div></div><button class="pri" onclick="addFin()">Simpan</button></div>
- <div class="card sc"><table><tr><th>Tanggal</th><th>Jenis</th><th>Kategori</th><th>Keterangan</th><th>Jumlah</th><th></th></tr>${rows.map(f=>`<tr><td>${f.d}</td><td class="${f.t}">${f.t==='in'?'Masuk':'Keluar'}</td><td>${esc(f.c)}</td><td>${esc(f.x||'')}</td><td>${rp(f.a)}</td><td>${f.s?'':`<button onclick="del('fin','${f.id}')">Hapus</button>`}</td></tr>`).join('')||'<tr><td class="mu">Belum ada data.</td></tr>'}</table></div>`}
+ <div class="card sc"><table><tr><th>Tanggal</th><th>Jenis</th><th>Kategori</th><th>Keterangan</th><th>Jumlah</th><th></th></tr>${rows.map(f=>`<tr><td>${f.d}</td><td class="${f.t}">${f.t==='in'?'Masuk':'Keluar'}</td><td>${esc(f.c)}</td><td>${esc(f.x||'')}</td><td>${rp(f.a)}</td><td>${f.s?'':`<button onclick="delFin('${f.id}')">Hapus</button>`}</td></tr>`).join('')||'<tr><td class="mu">Belum ada data.</td></tr>'}</table></div>`}
 
-async function importOld(){
- let o;try{o=JSON.parse(localStorage.getItem('bp_data'))}catch(e){}
- if(!o){msg='Tidak ada data lama di browser ini.';return render()}
- let n=0;
- for(const p of o.prod||[]){if(await put('prod',p.id,p))n++}
- for(const f of o.fin||[]){if(!f.s&&await put('fin',f.id,f))n++}
- for(const s of o.sales||[]){if(await put('sales',s.id,s))n++}
- if(o.price)try{await db.doc('settings/price').set(o.price)}catch(e){}
- msg=n+' catatan lama diimpor.';render()}
 function vAkun(){
- let old=false;try{old=!!localStorage.getItem('bp_data')}catch(e){}
- return `${msgH()}<div class="card"><b>${esc(ME.name)}</b><div class="mu">Peran: ${adm()?'Admin (pemilik/editor)':'Kasir'}${ME.write?'':' - hanya lihat'}</div></div>
- <div class="card"><b>Kelola akun</b><p class="k">Login memakai akun Claude. Untuk menambah kasir, bagikan halaman ini lewat menu Bagikan dan beri akses Contributor. Pemilik dan Editor otomatis menjadi Admin, Contributor menjadi Kasir. Semua data tersimpan bersama dan tampil langsung di semua perangkat.</p>${adm()&&old?'<button onclick="importOld()">Impor data lama dari browser ini</button>':''}</div>`}
+ return `<div class="card"><b>${esc(me)}</b><div class="mu">Peran: ${adm()?'Admin (pemilik)':'Kasir'}</div><br><button onclick="logout()">Keluar</button></div>
+ <div class="card sc"><b>Daftar akun</b><table>${users.map(u=>`<tr><td>${esc(u.n)}</td><td>${u.r==='admin'?'Admin':'Kasir'}</td><td>${adm()&&u.n!==me?`<button onclick="delUser('${esc(u.n)}')">Hapus</button>`:''}</td></tr>`).join('')}</table></div>
+ <p class="k">Data tersimpan di browser perangkat ini. Akun pertama otomatis menjadi Admin; akun berikutnya menjadi Kasir.</p>`}
+
+function authHTML(){
+ const r=mode==='register';
+ return `<div class="auth"><h2>🦆 Peternakan Bebek Petelur</h2>${msgH()}<div class="card"><label class="k">Username</label><input id="un" autocomplete="username"><label class="k">Kata sandi</label><input id="pw" type="password" autocomplete="${r?'new-password':'current-password'}"><button class="pri" onclick="doAuth()">${r?'Daftar':'Masuk'}</button><p class="k">${r?'Sudah punya akun?':'Belum punya akun?'} <a onclick="setMode('${r?'login':'register'}')">${r?'Masuk':'Daftar'}</a>${!users.length?' (akun pertama menjadi Admin)':''}</p></div></div>`}
 
 const V={dash:vDash,prod:vProd,kasir:vKasir,fin:vFin,akun:vAkun};
 function render(){
  const A=$('#app');
- if(status!=='ok'){A.innerHTML=`<main><div class="card"><h3>🦆 Peternakan Bebek Petelur</h3><p class="mu">${status==='load'?'Memuat data...':'Penyimpanan bersama tidak tersedia. Buka halaman ini dari akun Claude yang diberi akses oleh pemilik.'}</p></div></main>`;return}
+ if(!cur()){A.innerHTML=authHTML();return}
  const T=adm()?[['dash','Dashboard'],['prod','Produksi'],['kasir','Kasir'],['fin','Keuangan'],['akun','Akun']]:[['kasir','Kasir'],['prod','Produksi'],['akun','Akun']];
  if(!T.some(t=>t[0]===tab))tab=T[0][0];
- A.innerHTML=`<header class="top"><b>🦆 Bebek Petelur</b><span>${esc(ME.name)} · ${adm()?'Admin':'Kasir'}</span></header><nav>${T.map(t=>`<button class="${t[0]===tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}</nav><main>${V[tab]()}</main>`}
-function draw(){if(/INPUT|SELECT/.test(document.activeElement?.tagName||'')){dirty=1;return}render()}
-document.addEventListener('focusout',()=>{if(dirty){dirty=0;setTimeout(()=>{if(!/INPUT|SELECT/.test(document.activeElement?.tagName||''))render()},50)}});
-function sub(col){db.collection(col).onSnapshot(s=>{D[col]=s.docs.map(x=>({...x.data(),id:x.id}));draw()},e=>{msg='Koneksi data '+col+' terputus ('+e.code+').';draw()})}
-(async()=>{
- render();
- try{
-  db=await claude.use('db');const U=await claude.use('user');
-  if(!db){status='nodb';return render()}
-  if(U){ME.admin=!!(await U.isOwner()||await U.canEdit());ME.write=(await U.can('data.write'))!==false;try{ME.name=(await U.me()).name||''}catch(e){}}
-  ME.name=ME.name||'Pengguna';
-  status='ok';
-  sub('prod');sub('sales');if(ME.admin)sub('fin');
-  db.doc('settings/price').onSnapshot(s=>{if(s.exists)D.price={...D.price,...s.data()};draw()},()=>{});
-  render();
- }catch(e){status='nodb';render()}
-})();
+ A.innerHTML=`<header class="top"><b>🦆 Bebek Petelur</b><span>${esc(me)} · ${adm()?'Admin':'Kasir'}</span></header><nav>${T.map(t=>`<button class="${t[0]===tab?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('')}</nav><main>${V[tab]()}</main>`}
+render();
 </script></body></html>
